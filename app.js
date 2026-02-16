@@ -137,7 +137,9 @@ function addConverterCard() {
       return;
     }
 
-    const conversions = mode === "paragraph" ? convertParagraph(source) : convertSingleSource(source, mode);
+    const conversions = mode.startsWith("paragraph-")
+      ? convertParagraph(source, mode.replace("paragraph-", ""))
+      : convertSingleSource(source, mode);
 
     if (conversions.length === 0) {
       statusText.textContent = "No valid time values found in the input.";
@@ -192,108 +194,49 @@ function convertSingleSource(source, mode) {
     return [toConversionRecord(cleaned, "GPS WWWWSSSSSS", gpsSecondsToUnixSeconds(gpsSeconds))];
   }
 
-  const detected = detectTokenType(cleaned, source.toLowerCase());
-  if (!detected) return [];
-
-  if (detected.type === "unix") {
-    const unixSeconds = parseUnixToSeconds(cleaned);
-    return unixSeconds == null ? [] : [toConversionRecord(cleaned, "Auto detected Unix/POSIX", unixSeconds)];
-  }
-
-  if (detected.type === "gps") {
-    return [toConversionRecord(cleaned, "Auto detected GPS seconds", gpsSecondsToUnixSeconds(detected.gpsSeconds))];
-  }
-
-  return [
-    toConversionRecord(
-      cleaned,
-      "Auto detected GPS WWWWSSSSSS",
-      gpsSecondsToUnixSeconds(detected.week * 604800 + detected.secondsOfWeek)
-    )
-  ];
+  return [];
 }
 
-function convertParagraph(paragraph) {
-  const matches = paragraph.matchAll(/\b\d{4,13}\b/g);
-  const lower = paragraph.toLowerCase();
+function convertParagraph(paragraph, paragraphType) {
+  const matches = paragraphType === "gps-week-seconds"
+    ? paragraph.matchAll(/\b\d{10}\b/g)
+    : paragraph.matchAll(/\b\d{4,13}\b/g);
   const results = [];
 
   for (const match of matches) {
     const token = match[0];
-    const index = match.index ?? 0;
-    const localContext = lower.slice(Math.max(0, index - 25), Math.min(lower.length, index + token.length + 25));
-    const detected = detectTokenType(token, localContext);
-    if (!detected) continue;
 
-    if (detected.type === "unix") {
+    if (paragraphType === "unix") {
       const unixSeconds = parseUnixToSeconds(token);
       if (unixSeconds != null) {
-        results.push(toConversionRecord(token, "Detected Unix/POSIX in paragraph", unixSeconds));
+        results.push(toConversionRecord(token, "Unix/POSIX from paragraph", unixSeconds));
       }
       continue;
     }
 
-    if (detected.type === "gps") {
-      results.push(
-        toConversionRecord(token, "Detected GPS seconds in paragraph", gpsSecondsToUnixSeconds(detected.gpsSeconds))
-      );
+    if (paragraphType === "gps") {
+      const gpsSeconds = Number.parseInt(token, 10);
+      if (Number.isFinite(gpsSeconds)) {
+        results.push(toConversionRecord(token, "GPS seconds from paragraph", gpsSecondsToUnixSeconds(gpsSeconds)));
+      }
       continue;
     }
 
-    results.push(
-      toConversionRecord(
-        token,
-        "Detected GPS WWWWSSSSSS in paragraph",
-        gpsSecondsToUnixSeconds(detected.week * 604800 + detected.secondsOfWeek)
-      )
-    );
+    if (paragraphType === "gps-week-seconds") {
+      const parsed = parseGpsWeekSeconds(token);
+      if (parsed) {
+        results.push(
+          toConversionRecord(
+            token,
+            "GPS WWWWSSSSSS from paragraph",
+            gpsSecondsToUnixSeconds(parsed.week * 604800 + parsed.secondsOfWeek)
+          )
+        );
+      }
+    }
   }
 
   return deduplicateBySourceAndUnix(results);
-}
-
-function detectTokenType(token, context) {
-  const stripped = token.replace(/\s+/g, "");
-
-  if (!/^\d+$/.test(stripped)) {
-    return null;
-  }
-
-  const gpsWeekSeconds = parseGpsWeekSeconds(stripped);
-  const value = Number.parseInt(stripped, 10);
-
-  if (/unix|posix|epoch/.test(context)) {
-    return { type: "unix" };
-  }
-
-  if (/gps\s*(week|wwww|tow|seconds|time)/.test(context) && gpsWeekSeconds) {
-    return { type: "gps-week-seconds", ...gpsWeekSeconds };
-  }
-
-  if (/gps/.test(context) && Number.isFinite(value)) {
-    return { type: "gps", gpsSeconds: value };
-  }
-
-  if (stripped.length === 13) {
-    return { type: "unix" };
-  }
-
-  if (gpsWeekSeconds && stripped.length === 10 && !/^1[6-9]\d{8}$/.test(stripped)) {
-    return { type: "gps-week-seconds", ...gpsWeekSeconds };
-  }
-
-  if (stripped.length >= 9 && stripped.length <= 10) {
-    if (value < 1600000000) {
-      return { type: "gps", gpsSeconds: value };
-    }
-    return { type: "unix" };
-  }
-
-  if (stripped.length === 11 || stripped.length === 12) {
-    return { type: "gps", gpsSeconds: value };
-  }
-
-  return null;
 }
 
 function parseUnixToSeconds(raw) {

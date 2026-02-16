@@ -39,8 +39,9 @@
         <label>
           Input mode
           <select class="input-mode">
-            <option value="paragraph">Paragraph (auto detect times)</option>
-            <option value="auto-single">Single value (auto detect)</option>
+            <option value="paragraph-unix">Paragraph of Unix / POSIX times</option>
+            <option value="paragraph-gps">Paragraph of GPS seconds</option>
+            <option value="paragraph-gps-week-seconds">Paragraph of GPS WWWWSSSSSS</option>
             <option value="unix">Single Unix / POSIX time</option>
             <option value="gps">Single GPS seconds</option>
             <option value="gps-week-seconds">Single GPS WWWWSSSSSS</option>
@@ -51,7 +52,7 @@
           Enter text or time
           <textarea
             class="source-input"
-            placeholder="Example paragraph: Payload reports GPS 1419724818 and backup value 2376100123."
+            placeholder="Paste a paragraph containing one or more time values. Choose the correct time type above first."
             rows="5"
           ></textarea>
         </label>
