@@ -45,6 +45,10 @@ p {
   max-width: 70ch;
 }
 
+.meta-note {
+  font-size: 0.9rem;
+}
+
 main {
   padding: 1.5rem 2rem 2rem;
 }

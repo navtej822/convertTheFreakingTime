@@ -1,6 +1,7 @@
 const GPS_UNIX_EPOCH_DIFF = 315964800;
+const NTP_UNIX_EPOCH_DIFF = 2208988800;
 
-const LEAP_SECOND_EFFECTIVE_DATES = [
+const BUILT_IN_LEAP_SECOND_EFFECTIVE_DATES = [
   "1981-07-01T00:00:00Z",
   "1982-07-01T00:00:00Z",
   "1983-07-01T00:00:00Z",
@@ -21,13 +22,99 @@ const LEAP_SECOND_EFFECTIVE_DATES = [
   "2017-01-01T00:00:00Z"
 ].map((iso) => Math.floor(Date.parse(iso) / 1000));
 
+const LEAP_SECOND_DATA_SOURCES = [
+  "https://data.iana.org/time-zones/tzdb/leap-seconds.list",
+  "https://raw.githubusercontent.com/eggert/tz/main/leap-seconds.list"
+];
+
+let leapSecondEffectiveDates = [...BUILT_IN_LEAP_SECOND_EFFECTIVE_DATES];
+let leapSecondSourceLabel = "built-in table (through 2017-01-01)";
+
 const converterList = document.querySelector("#converter-list");
 const template = document.querySelector("#converter-template");
 const addConverterButton = document.querySelector("#add-converter");
 
 addConverterButton.addEventListener("click", () => addConverterCard());
 
+updateLeapSecondStatus();
+void refreshLeapSecondTable();
 addConverterCard();
+
+function updateLeapSecondStatus() {
+  const statusElement = document.querySelector("#leap-second-status");
+  if (!statusElement) return;
+
+  const lastKnownLeap = leapSecondEffectiveDates[leapSecondEffectiveDates.length - 1];
+  const yearsSinceLastLeap = (Date.now() / 1000 - lastKnownLeap) / (365.25 * 24 * 3600);
+  const warning = yearsSinceLastLeap > 8
+    ? " New leap seconds may be added in the future."
+    : "";
+
+  statusElement.textContent = `Leap second table: ${leapSecondSourceLabel}.${warning}`;
+}
+
+async function refreshLeapSecondTable() {
+  for (const source of LEAP_SECOND_DATA_SOURCES) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const response = await fetch(source, { signal: controller.signal, cache: "no-store" });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        continue;
+      }
+
+      const text = await response.text();
+      const parsedDates = parseLeapSecondsList(text);
+      if (parsedDates.length === 0) {
+        continue;
+      }
+
+      leapSecondEffectiveDates = parsedDates;
+      const latest = new Date(parsedDates[parsedDates.length - 1] * 1000).toISOString().slice(0, 10);
+      leapSecondSourceLabel = `online source (${source}) through ${latest}`;
+      updateLeapSecondStatus();
+      return;
+    } catch {
+      // Try next source.
+    }
+  }
+
+  updateLeapSecondStatus();
+}
+
+function parseLeapSecondsList(content) {
+  const rows = content.split(/\r?\n/);
+  const parsed = [];
+
+  for (const row of rows) {
+    const line = row.trim();
+    if (!line || line.startsWith("#")) continue;
+
+    const columns = line.split(/\s+/);
+    if (columns.length < 2) continue;
+
+    const ntpSeconds = Number.parseInt(columns[0], 10);
+    const taiMinusUtc = Number.parseInt(columns[1], 10);
+
+    if (!Number.isFinite(ntpSeconds) || !Number.isFinite(taiMinusUtc)) {
+      continue;
+    }
+
+    const gpsMinusUtc = taiMinusUtc - 19;
+    if (gpsMinusUtc <= 0) {
+      continue;
+    }
+
+    const unixSeconds = ntpSeconds - NTP_UNIX_EPOCH_DIFF;
+    if (unixSeconds >= GPS_UNIX_EPOCH_DIFF) {
+      parsed.push(unixSeconds);
+    }
+  }
+
+  return parsed;
+}
 
 function addConverterCard() {
   const clone = template.content.firstElementChild.cloneNode(true);
@@ -238,7 +325,7 @@ function parseGpsWeekSeconds(raw) {
 
 function leapSecondsAtUnix(unixSeconds) {
   let leapCount = 0;
-  for (const threshold of LEAP_SECOND_EFFECTIVE_DATES) {
+  for (const threshold of leapSecondEffectiveDates) {
     if (unixSeconds >= threshold) {
       leapCount += 1;
     }

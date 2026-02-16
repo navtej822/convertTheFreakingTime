@@ -19,3 +19,4 @@ Then open `http://localhost:4173`.
 - Automatic type detection with manual override modes.
 - Concurrent multi-converter cards with a `+ Add Converter` button.
 - Shows human-readable UTC output along with all supported formats.
+- Uses a built-in leap-second table and attempts an online refresh from IANA/tz data for long-term accuracy.
