@@ -165,6 +165,20 @@ button {
   font-family: var(--mono);
 }
 
+.warning-footer {
+  margin: 2rem;
+  padding: 1.1rem 1.2rem;
+  border: 3px dashed #9b1232;
+  border-radius: 14px;
+  background: #fff1f4;
+  color: #5f1021;
+  font-size: 1.28rem;
+  font-weight: 800;
+  line-height: 1.45;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(155, 18, 50, 0.16);
+}
+
 @media (max-width: 760px) {
   .app-header,
   main {
@@ -178,5 +192,10 @@ button {
 
   .result-grid {
     grid-template-columns: 1fr;
+  }
+
+  .warning-footer {
+    margin: 1rem;
+    font-size: 1.05rem;
   }
 }
