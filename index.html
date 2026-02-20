@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Time Converter | GPS ↔ Unix ↔ Human Readable</title>
+    <meta
+      name="description"
+      content="Convert Unix/POSIX time, GPS time, and GPS week-seconds format to human-readable UTC instantly in your browser."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>Just Convert the freaking time PLEASE!!!!!</h1>
+        <p>
+          Convert <strong>Unix/POSIX</strong>, <strong>GPS seconds</strong>, and
+          <strong>GPS WWWWSSSSSS</strong> from a single time value or a whole paragraph.
+        </p>
+        <p id="leap-second-status" class="meta-note" aria-live="polite"></p>
+      </div>
+      <button id="add-converter" class="primary-btn" type="button" aria-label="Add converter">
+        + Add Converter
+      </button>
+    </header>
+
+    <main>
+      <section id="converter-list" class="converter-list" aria-live="polite"></section>
+    </main>
+
+    <template id="converter-template">
+      <article class="converter-card">
+        <div class="converter-card__topbar">
+          <h2>Converter <span class="converter-index"></span></h2>
+          <button class="ghost-btn remove-btn" type="button" aria-label="Remove converter">Remove</button>
+        </div>
+
+        <label>
+          Input mode
+          <select class="input-mode">
+            <option value="paragraph-unix">Paragraph of Unix / POSIX times</option>
+            <option value="paragraph-gps">Paragraph of GPS seconds</option>
+            <option value="paragraph-gps-week-seconds">Paragraph of GPS WWWWSSSSSS</option>
+            <option value="unix">Single Unix / POSIX time</option>
+            <option value="gps">Single GPS seconds</option>
+            <option value="gps-week-seconds">Single GPS WWWWSSSSSS</option>
+          </select>
+        </label>
+
+        <label>
+          Enter text or time
+          <textarea
+            class="source-input"
+            placeholder="Paste a paragraph containing one or more time values. Choose the correct time type above first."
+            rows="5"
+          ></textarea>
+        </label>
+
+        <div class="card-actions">
+          <button class="primary-btn convert-btn" type="button">Convert</button>
+          <button class="ghost-btn clear-btn" type="button">Clear</button>
+        </div>
+
+        <p class="status-text" aria-live="polite"></p>
+        <div class="results-wrapper"></div>
+      </article>
+    </template>
+
+    <footer class="warning-footer" role="note" aria-live="polite">
+      ⚠️ Personal-use warning: I built this for my own freaking chaos. You are totally allowed to use it, but it can be wrong sometimes. If it saves your day, awesome. If it starts a space mission by mistake... maybe double-check first 😅
+      <a
+        class="repo-link"
+        href="https://github.com/navtej822/convertTheFreakingTime"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="GitHub repository for contributions"
+      >
+        <span aria-hidden="true">🐙</span>
+        If you want to contribute, this is the repo.
+      </a>
+    </footer>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
