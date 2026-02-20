@@ -15,7 +15,7 @@ Then open `http://localhost:4173`.
 
 ## Features
 
-- Convert single values or scan paragraphs for multiple values.
+- Convert single values or scan paragraphs for multiple values (supports seconds and milliseconds inputs).
 - Explicit input type selection (no auto-detection guesses).
 - Robust token extraction from surrounding text (e.g. `Interval(start=1455306978, end=1455307008)`).
 - Concurrent multi-converter cards with a `+ Add Converter` button.

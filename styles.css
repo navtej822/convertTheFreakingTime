@@ -177,7 +177,25 @@ button {
   line-height: 1.45;
   text-align: center;
   box-shadow: 0 6px 20px rgba(155, 18, 50, 0.16);
+  display: grid;
+  justify-items: center;
 }
+.repo-link {
+  margin-top: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.repo-link:hover {
+  opacity: 0.85;
+}
+
 
 @media (max-width: 760px) {
   .app-header,
@@ -197,5 +215,9 @@ button {
   .warning-footer {
     margin: 1rem;
     font-size: 1.05rem;
+  }
+
+  .repo-link {
+    font-size: 0.92rem;
   }
 }

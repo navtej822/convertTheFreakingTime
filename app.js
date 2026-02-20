@@ -106,7 +106,7 @@ function refreshConverterIndices() {
 
 function extractTokensForType(source, inputType) {
   if (inputType === "gps-week-seconds") {
-    return [...source.matchAll(/\b\d{10}\b/g)].map((match) => match[0]);
+    return [...source.matchAll(/\b\d{10}(?:\d{3,4})?\b/g)].map((match) => match[0]);
   }
 
   if (inputType === "unix") {
@@ -114,7 +114,7 @@ function extractTokensForType(source, inputType) {
   }
 
   if (inputType === "gps") {
-    return [...source.matchAll(/\b\d{4,12}\b/g)].map((match) => match[0]);
+    return [...source.matchAll(/\b\d{4,13}\b/g)].map((match) => match[0]);
   }
 
   return [];
@@ -133,8 +133,8 @@ function convertTokens(tokens, inputType) {
     }
 
     if (inputType === "gps") {
-      const gpsSeconds = Number.parseInt(token, 10);
-      if (Number.isFinite(gpsSeconds) && gpsSeconds >= 0) {
+      const gpsSeconds = parseGpsSecondsMaybeMillis(token);
+      if (gpsSeconds != null) {
         results.push(toConversionRecord(token, "GPS seconds", gpsSecondsToUnixSeconds(gpsSeconds)));
       }
       continue;
@@ -163,16 +163,37 @@ function parseUnixToSeconds(raw) {
   return value;
 }
 
+function parseGpsSecondsMaybeMillis(raw) {
+  const digits = raw.replace(/\D/g, "");
+  if (!/^\d{4,13}$/.test(digits)) {
+    return null;
+  }
+
+  const value = Number.parseInt(digits, 10);
+  if (!Number.isFinite(value) || value < 0) {
+    return null;
+  }
+
+  if (digits.length >= 13) {
+    return Math.floor(value / 1000);
+  }
+
+  return value;
+}
+
 function parseGpsWeekSeconds(raw) {
   const digits = raw.replace(/\D/g, "");
-  if (!/^\d{10}$/.test(digits)) {
+  if (!/^\d{10}(?:\d{3,4})?$/.test(digits)) {
     return null;
   }
 
   const week = Number.parseInt(digits.slice(0, 4), 10);
-  const secondsOfWeek = Number.parseInt(digits.slice(4), 10);
+  const secondsSegment = digits.slice(4);
+  const secondsOfWeek = secondsSegment.length >= 9
+    ? Math.floor(Number.parseInt(secondsSegment, 10) / 1000)
+    : Number.parseInt(secondsSegment, 10);
 
-  if (secondsOfWeek >= SECONDS_PER_GPS_WEEK) {
+  if (!Number.isFinite(secondsOfWeek) || secondsOfWeek >= SECONDS_PER_GPS_WEEK) {
     return null;
   }
 
